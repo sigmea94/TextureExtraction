@@ -1,0 +1,15 @@
+
+# build
+*.egg-info
+dist
+*.pyc
+*.pyo
+build
+MANIFEST
+*.swp
+
+# virtualenvs
+venv
+
+# IDEs
+.idea
