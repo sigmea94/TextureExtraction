@@ -29,14 +29,16 @@ class FaceParser(object):
                     # start new faces for unnamed object
                     self.faces = []
                     self.meshes.append(self.faces)
-                face = parse_face(line)
-                self.faces.append(face)
+                faces = parse_line(line)
+                for face in faces:
+                    self.faces.append(face)
         return self.meshes
 
 
-# generate vertex and add to faces
-def parse_face(line):
-    face = []   # list of vertices: face consists of multiple vertices
+# generate triangulated faces for given line
+def parse_line(line):
+    faces = []   # list of triangulated faces: face consists of multiple vertices
+    first_vertex, prev_vertex, current_vertex = None, None, None
     for i, vertex in enumerate(line.split()[1:]):   # each vertex is separated by a space
         has_texture = False
         has_normal = False
@@ -51,9 +53,18 @@ def parse_face(line):
         v_idx = int(parts[0]) - 1
         vt_idx = int(parts[1]) - 1 if has_texture else None
         vn_idx = int(parts[2]) - 1 if has_normal else None
-        vertex = Vertex(v_idx, vt_idx, vn_idx)
-        face.append(vertex)
-    return face
+        prev_vertex = current_vertex
+        current_vertex = Vertex(v_idx, vt_idx, vn_idx)
+        if i == 0:
+            # save first vertex for triangulation
+            first_vertex = current_vertex
+        if i == 2:
+            # first triangle
+            faces.append([first_vertex, prev_vertex, current_vertex])
+        if i > 2:
+            # triangulate further triangles
+            faces.append([prev_vertex, current_vertex, first_vertex])
+    return faces
 
 
 def line_generator(file_name, encoding):
