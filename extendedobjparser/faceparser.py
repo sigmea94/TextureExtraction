@@ -36,6 +36,7 @@ class FaceParser(object):
 
 
 # generate triangulated faces for given line
+# raises ValueError when any vertex doesn't have texture coordinates or normals
 def parse_line(line):
     faces = []   # list of triangulated faces: face consists of multiple vertices
     first_vertex, prev_vertex, current_vertex = None, None, None
@@ -49,6 +50,8 @@ def parse_line(line):
             if parts[1] != '':
                 has_texture = True
             has_normal = True
+        if not has_texture or not has_normal:
+            raise ValueError("Vertices of faces should have texture coordinates and normals")
 
         v_idx = int(parts[0]) - 1
         vt_idx = int(parts[1]) - 1 if has_texture else None
