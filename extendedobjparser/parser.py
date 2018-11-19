@@ -9,7 +9,7 @@ class Parser:
             file_name,
             strict=False,
             encoding="utf-8",
-            create_materials=False,
+            create_materials=True,
     ):
         self.file_name = file_name
         self.strict = strict

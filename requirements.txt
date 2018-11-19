@@ -1,0 +1,2 @@
+pywavefront==1.0.2
+Pillow==5.3.0
