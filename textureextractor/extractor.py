@@ -1,15 +1,15 @@
 from PIL import Image
 import json
-from extendedobjparser.parser import Parser
+from objparser.parser import Parser
 
 
 class Extractor:
 
     def __init__(self, obj_file, camera_file, image_file, base_file=None):
-        self.obj_file = self.__read_obj(obj_file)
-        self.camera_file = self.__read_camera(camera_file)
-        self.image_file = self.__read_image(image_file)
-        self.base_file = self.__read_base(base_file)
+        self.scene = self.__read_obj(obj_file)
+        self.camera = self.__read_camera(camera_file)
+        self.image = self.__read_image(image_file)
+        self.base_texture = self.__read_base(base_file)
 
     def extract(self):
         # Todo: extract
@@ -18,14 +18,10 @@ class Extractor:
 
     @staticmethod
     def __read_obj(obj_path):
-        # parse file, check file is obj file
-        if not obj_path.endswith(".obj"):
-            raise ValueError("model file should be an obj file")
-        # use extended obj parser
+        # use obj parser
         parser = Parser(obj_path)
-        obj = parser.parse()
-        # return scene (list of meshes)
-        return obj
+        scene = parser.parse()
+        return scene
 
     @staticmethod
     def __read_camera(camera_path):
