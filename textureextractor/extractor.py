@@ -1,6 +1,8 @@
 from PIL import Image
 import json
 from objparser.parser import Parser
+from textureextractor.viewingpipeline import Pipeline
+from textureextractor import culler
 
 
 class Extractor:
@@ -12,8 +14,19 @@ class Extractor:
         self.base_texture = self.__read_base(base_file)
 
     def extract(self):
-        # Todo: extract
-        # Todo: save image
+        # backface culling (after view transformation cop is [0,0,0])
+        scene = culler.cull_backfaces(self.scene, self.camera["position"])
+        scene.save_to_file("out.obj")
+
+        # use list comprehension to extract only vertex coordinates
+        pipeline = Pipeline(self.camera, [v.pos for v in self.scene.vertices])
+        pipeline.apply_view_transformation()
+        # add transformed vertices to scene
+        for i, v in enumerate(pipeline.get_vertices()):
+            self.scene.vertices[i].pos = v
+
+        # TODO: frustum culling on z
+        # TODO: perspective tranformation
         pass
 
     @staticmethod
