@@ -18,4 +18,3 @@ def cull_backfaces(scene, cop):
             faces_to_discard.append(face)
     for f in faces_to_discard:
         scene.faces.remove(f)
-    return scene

@@ -4,7 +4,6 @@ import numpy as np
 class Pipeline:
 
     def __init__(self, camera, vertices):
-        # TODO: normals also needed?
         self.vertices = []
         self.set_vertices(vertices)
 
@@ -29,6 +28,11 @@ class Pipeline:
         for v in self.vertices:
             res.append(np.delete(v, 3).tolist())
         return res
+
+    def apply_to_scene(self, scene):
+        # add transformed vertices and normals to scene
+        for i, v in enumerate(self.get_vertices()):
+            scene.vertices[i].pos = v
 
     def apply_view_transformation(self):
         t_an = np.identity(4)
