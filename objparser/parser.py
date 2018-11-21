@@ -42,32 +42,35 @@ class Parser:
             yield line
         file.close()
 
-    # parse vertex and add to list
     def __parse_v(self, line):
+        """parse vertex and add to list"""
         parts = line.split()
         if len(parts) is not 4:
             raise ValueError("Vertex should have three dimensions")
         vertex = Vertex(float(parts[1]), float(parts[2]), float(parts[3]))
         self.vertices.append(vertex)
 
-    # parse texture and add to list
     def __parse_vt(self, line):
+        """parse texture and add to list"""
         parts = line.split()
         if len(parts) is not 3:
             raise ValueError("Texture coordinate should have two dimensions")
         vt = [float(parts[1]), float(parts[2])]
         self.texture_coords.append(vt)
 
-    # parse normal and add to list
     def __parse_vn(self, line):
+        """parse normal and add to list"""
         parts = line.split()
         if len(parts) is not 4:
             raise ValueError("Normals should have three dimensions")
         vn = [float(parts[1]), float(parts[2]), float(parts[3])]
         self.normals.append(vn)
 
-    # parse face and add to list
     def __parse_f(self, line):
+        """
+        parse face and add to list
+        face are saved as triangles
+        """
         # store the first, previous and current vertex for triangulation
         first, prev, current = None, None, None
         for i, vertex in enumerate(line.split()[1:]):

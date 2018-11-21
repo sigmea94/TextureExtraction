@@ -1,14 +1,21 @@
 class Scene:
+    """
+    class represents a 3D-Scene build of triangular meshes
+    it contains of:
+     a list of vertices
+     a list of texture coordinates
+     a list of normals
+     a list of faces
+    """
 
-    # class represents a 3D-Scene build of triangular meshes
     def __init__(self, v, vt, vn, f):
         self.vertices = v
         self.texture_coords = vt
         self.normals = vn
         self.faces = f
 
-    # method to save scene as a obj file
     def save_to_file(self, file_path):
+        """method to save scene as a obj file"""
         if not file_path.endswith(".obj"):
             raise ValueError("scene should be save as an obj file")
         f = open(file_path, 'w')

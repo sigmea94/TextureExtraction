@@ -14,16 +14,28 @@ class Extractor:
         self.base_texture = self.__read_base(base_file)
 
     def extract(self):
+        """
+        extract a texture
+        steps:
+         1. cull backfaces
+         2. apply view transformation to scene
+         ...
+        """
+
         # backface culling with camera as cop
-        scene = culler.cull_backfaces(self.scene, self.camera["position"])
+        culler.cull_backfaces(self.scene, self.camera["position"])
 
         # use list comprehension to extract only vertex coordinates
-        pipeline = Pipeline(self.camera, [v.pos for v in self.scene.vertices])
+        pipeline = Pipeline(self.camera, [v.pos for v in self.scene.vertices], self.scene.normals)
         pipeline.apply_view_transformation()
+        pipeline.apply_to_scene(self.scene)
+        self.scene.save_to_file("out.obj")
 
+        # TODO: perspective transformation
         # TODO: frustum culling
-        # TODO: perspective tranformation
-        pass
+        # TODO: occlusion culling
+        # TODO: screen projection
+        # TODO: texture generation
 
     @staticmethod
     def __read_obj(obj_path):
@@ -34,12 +46,15 @@ class Extractor:
 
     @staticmethod
     def __read_camera(camera_path):
-        # returns dictionary with camera parameters
-        # camera parameters are:
-        #   - focal length
-        #   - fov
-        #   - position
-        #   - look_direction
+        """
+        camera parameters are:
+          - focal length
+          - fov
+          - position
+          - look_direction
+        :param camera_path: path to json file which specifies the camera
+        :return: dictionary with camera parameters
+        """
         if not camera_path.endswith(".json"):
             raise ValueError("camera file should be a json file")
 
@@ -65,8 +80,13 @@ class Extractor:
         return img
 
     @staticmethod
-    def __read_base(base_file):
-        # check for existing uv-texture image which should be refined
+    def __read_base(base_file=None):
+        """
+        opens given image or creates new one if it isn't given
+
+        :param base_file: path to uv-texture file which should be refined (optional)
+        :return: texture image
+        """
         # create a new one if there is no existing
         if base_file is not None:
             base = Image.open(base_file, mode='r')
