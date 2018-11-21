@@ -1,5 +1,8 @@
-from PIL import Image
 import json
+import math
+
+from PIL import Image
+
 from objparser.parser import Parser
 from textureextractor.viewingpipeline import Pipeline
 from textureextractor import culler
@@ -12,6 +15,12 @@ class Extractor:
         self.camera = self.__read_camera(camera_file)
         self.image = self.__read_image(image_file)
         self.base_texture = self.__read_base(base_file)
+
+        # take image aspect ratio as camera's aspect ratio
+        self.camera["aspect_ratio"] = self.image.width / self.image.height
+        # calculate vertical fov from horizontal fov and aspect ratio
+        self.camera["fov_vertical"] = self.__calculate_vertical_fov(
+            self.camera["fov_horizontal"], self.camera["aspect_ratio"])
 
     def extract(self):
         """
@@ -29,10 +38,14 @@ class Extractor:
         pipeline = Pipeline(self.camera, [v.pos for v in self.scene.vertices], self.scene.normals)
         pipeline.apply_view_transformation()
         pipeline.apply_to_scene(self.scene)
-        self.scene.save_to_file("out.obj")
 
-        # TODO: perspective transformation
+        # cull faces behind camera
+        culler.cull_faces_behind_camera(self.scene)
+
         # TODO: frustum culling
+        # frustum culling is done before perspective transformation to determine best near and far plane
+        # normaly it would be better to do it after projection
+        # TODO: perspective transformation
         # TODO: occlusion culling
         # TODO: screen projection
         # TODO: texture generation
@@ -49,7 +62,7 @@ class Extractor:
         """
         camera parameters are:
           - focal length
-          - fov
+          - horizontal fov
           - position
           - look_direction
         :param camera_path: path to json file which specifies the camera
@@ -64,7 +77,7 @@ class Extractor:
         # validate
         if "focal_length" not in camera:
             raise ValueError("camera parameter 'focal_length' should exist")
-        elif "fov" not in camera:
+        elif "fov_horizontal" not in camera:
             raise ValueError("camera parameter 'fov' should exist")
         elif "position" not in camera:
             raise ValueError("camera parameter 'position' should exist")
@@ -99,3 +112,9 @@ class Extractor:
         if not isinstance(image, Image):
             raise ValueError("only pillow image objects can be saved")
         image.save(image_path)
+
+    @staticmethod
+    def __calculate_vertical_fov(fov_h, aspect_ratio):
+        fov_h_rad = math.radians(fov_h)
+        fov_v = 2 * math.atan((1/aspect_ratio) * math.tan(fov_h_rad/2))
+        return math.degrees(fov_v)

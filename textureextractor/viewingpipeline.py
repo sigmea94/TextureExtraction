@@ -19,7 +19,7 @@ class Pipeline:
         self.set_normals(normals)
 
         look = np.array(camera["look_direction"])
-        self.w = look / np.linalg.norm(look)
+        self.w = -look / np.linalg.norm(look)
 
         # up direction is considered given
         up = np.array([0, 1, 0])
@@ -100,6 +100,7 @@ class Pipeline:
         for i, v in enumerate(self.vertices):
             self.vertices[i] = np.matmul(view_mat, v)
 
+        # only the rotation needs to be applied to the normals
         for i, n in enumerate(self.normals):
             self.normals[i] = np.matmul(m_an, n)
 
