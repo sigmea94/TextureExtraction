@@ -31,7 +31,7 @@ def cull_frustum(scene, fov_h, fov_v):
     """cull on frustum after view_transformation but before perspective projection"""
     faces_to_discard = []
     for face in scene.faces:
-        is_outside = True
+        is_outside = False
         tan_h = math.tan(math.radians(fov_h/2))
         tan_v = math.tan(math.radians(fov_v/2))
         for v in face.vertices:
@@ -41,10 +41,9 @@ def cull_frustum(scene, fov_h, fov_v):
             # calculate max_x (max_y) in distance z
             max_x = tan_h * abs(z)
             max_y = tan_v * abs(z)
-            if -max_x < x < max_x and -max_y < y < max_y and z < 0:
-                # if there is one vertex inside the frustum: keep the whole face
-                # TODO: if there is only one vertex outside: discard whole face?
-                is_outside = False
+            if x < -max_x or x > max_x or y < -max_y or y > max_y or z > 0:
+                # if there is only one vertex outside: discard whole face
+                is_outside = True
                 break
         if is_outside:
             __remove_face_from_vertices(scene, face)

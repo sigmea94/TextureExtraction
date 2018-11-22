@@ -109,6 +109,7 @@ class Pipeline:
         params:
             fov, aspect, n, f?
             n and f from smallest, biggest z?
+            n and f möglichst nah für guten z-buffer
         """
         pass
 
