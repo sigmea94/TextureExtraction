@@ -39,13 +39,14 @@ class Extractor:
         pipeline.apply_view_transformation()
         pipeline.apply_to_scene(self.scene)
 
-        # cull faces behind camera
-        culler.cull_faces_behind_camera(self.scene)
-
-        # TODO: frustum culling
+        # frustum culling
         # frustum culling is done before perspective transformation to determine best near and far plane
-        # normaly it would be better to do it after projection
+        # normally it would be easier to do it after projection
+        culler.cull_frustum(self.scene, self.camera["fov_horizontal"], self.camera["fov_vertical"])
+
         # TODO: perspective transformation
+        pipeline.set_vertices([v.pos for v in self.scene.vertices])
+        pipeline.apply_perspective_transformation()
         # TODO: occlusion culling
         # TODO: screen projection
         # TODO: texture generation
