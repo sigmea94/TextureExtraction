@@ -62,7 +62,6 @@ class Extractor:
     def __read_camera(camera_path):
         """
         camera parameters are:
-          - focal length
           - horizontal fov
           - position
           - look_direction
@@ -76,9 +75,7 @@ class Extractor:
             camera = json.load(f)
 
         # validate
-        if "focal_length" not in camera:
-            raise ValueError("camera parameter 'focal_length' should exist")
-        elif "fov_horizontal" not in camera:
+        if "fov_horizontal" not in camera:
             raise ValueError("camera parameter 'fov' should exist")
         elif "position" not in camera:
             raise ValueError("camera parameter 'position' should exist")
