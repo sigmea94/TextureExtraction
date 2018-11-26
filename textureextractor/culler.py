@@ -41,7 +41,31 @@ def cull_frustum(scene, fov_h, fov_v):
             # calculate max_x (max_y) in distance z
             max_x = tan_h * abs(z)
             max_y = tan_v * abs(z)
-            if x < -max_x or x > max_x or y < -max_y or y > max_y or z > 0:
+            if x < -max_x or x > max_x or y < -max_y or y > max_y or z >= 0:
+                # if there is only one vertex outside: discard whole face
+                is_outside = True
+                break
+        if is_outside:
+            __remove_face_from_vertices(scene, face)
+            faces_to_discard.append(face)
+    for f in faces_to_discard:
+        scene.faces.remove(f)
+
+
+def cull_frustum_after_perspective(scene):
+    """
+    cull on frustum after perspective projection
+    x and y are  between -1 and 1
+    z is less than 0
+    """
+    faces_to_discard = []
+    for face in scene.faces:
+        is_outside = False
+        for v in face.vertices:
+            x = v.pos[0]
+            y = v.pos[1]
+            z = v.pos[2]
+            if x < -1 or x > 1 or y < -1 or y > 1 or z >= 0:
                 # if there is only one vertex outside: discard whole face
                 is_outside = True
                 break

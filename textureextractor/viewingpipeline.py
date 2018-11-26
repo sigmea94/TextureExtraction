@@ -156,6 +156,24 @@ class Pipeline:
         for i, v in enumerate(self.vertices):
             self.vertices[i] = np.matmul(m_pers, v)
 
+    def apply_perspective_transformation3(self):
+        """
+        keeps z value but projects x and y between -1 and 1
+        """
+        tan_h = math.tan(math.radians(self.fov_h/2))
+        tan_v = math.tan(math.radians(self.fov_v/2))
+        for i, v in enumerate(self.vertices):
+            z = v[2]
+            if z == 0:
+                x = 0
+                y = 0
+            else:
+                # x / max_x
+                x = v[0] / (tan_h * abs(z))
+                # y / max_y
+                y = v[1] / (tan_v * abs(z))
+            self.vertices[i] = np.array([x, y, z, v[3]])
+
     def apply_screen_transformation(self, width, height):
         """tbd"""
         m_screen = np.zeros((4, 4))
