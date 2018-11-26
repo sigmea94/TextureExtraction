@@ -28,7 +28,10 @@ class Extractor:
         steps:
          1. cull backfaces
          2. apply view transformation to scene
-         ...
+         3. cull faces outside the view frustum
+         4. perspective transformation
+         5. TODO occlusion culling
+         6. screen transformation
         """
 
         # backface culling with camera as cop
@@ -44,11 +47,16 @@ class Extractor:
         # normally it would be easier to do it after projection
         culler.cull_frustum(self.scene, self.camera["fov_horizontal"], self.camera["fov_vertical"])
 
-        # TODO: perspective transformation
+        # perspective transfomation
         pipeline.set_vertices([v.pos for v in self.scene.vertices])
         pipeline.apply_perspective_transformation()
+
         # TODO: occlusion culling
-        # TODO: screen projection
+
+        # screen transformation
+        pipeline.apply_screen_transformation(self.image.width, self.image.height)
+        pipeline.apply_to_scene(self.scene)
+
         # TODO: texture generation
 
     @staticmethod

@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+import math
 
 
 class Pipeline:
@@ -12,6 +14,8 @@ class Pipeline:
         :param vertices: initial vertices
         :param normals: initial normals
         """
+        self.fov_h = camera["fov_horizontal"]
+        self.fov_v = camera["fov_vertical"]
 
         self.vertices = []
         self.set_vertices(vertices)
@@ -40,11 +44,13 @@ class Pipeline:
 
     def get_vertices(self):
         """
-        :return: vertices as list
+        :return: normalized vertices as list
         """
         res = []
         for v in self.vertices:
-            res.append(np.delete(v, 3).tolist())
+            # divide by w value
+            vertex = [a/v[3] for a in v]
+            res.append(np.delete(vertex, 3).tolist())
         return res
 
     def set_normals(self, normals):
@@ -105,14 +111,69 @@ class Pipeline:
             self.normals[i] = np.matmul(m_an, n)
 
     def apply_perspective_transformation(self):
-        """tbd
-        params:
-            fov, aspect, n, f?
-            n and f from smallest, biggest z?
-            n and f möglichst nah für guten z-buffer
         """
-        pass
+        projection into cuboid [0,-1]
+        see CG book Chapter 13
+        """
+        near, far = self.__get_best_near_and_far()
 
-    def apply_screen_transformation(self):
+        # scale f to -1
+        m_scale = np.zeros((4, 4))
+        m_scale[0][0] = 1/(far * math.tan(math.radians(self.fov_h/2)))
+        m_scale[1][1] = 1/(far * math.tan(math.radians(self.fov_v/2)))
+        m_scale[2][2] = 1 / far
+        m_scale[3][3] = 1
+
+        # transform frustum to cuboid
+        m_cub = np.zeros((4, 4))
+        m_cub[0][0] = far - near
+        m_cub[1][1] = far - near
+        m_cub[2][2] = far
+        m_cub[2][3] = near
+        m_cub[3][2] = near - far
+
+        m = np.matmul(m_cub, m_scale)
+
+        for i, v in enumerate(self.vertices):
+            self.vertices[i] = np.matmul(m, v)
+
+    def apply_perspective_transformation2(self):
+        """
+        projection into cube [-1,1]
+        see CG lecture
+        """
+        near, far = self.__get_best_near_and_far()
+
+        width = 2 * near * math.tan(math.radians(self.fov_h/2))
+        height = 2 * near * math.tan(math.radians(self.fov_v/2))
+        m_pers = np.zeros((4, 4))
+        m_pers[0][0] = (2*near)/width
+        m_pers[1][1] = (2 * near) / height
+        m_pers[2][2] = -(far + near) / (near - far)
+        m_pers[2][3] = (-2*far*near) / (near - far)
+        m_pers[3][2] = -1
+
+        for i, v in enumerate(self.vertices):
+            self.vertices[i] = np.matmul(m_pers, v)
+
+    def apply_screen_transformation(self, width, height):
         """tbd"""
-        pass
+        m_screen = np.zeros((4, 4))
+        m_screen[0][0] = width/2
+        m_screen[1][1] = height / 2
+        m_screen[0][3] = width / 2
+        m_screen[1][3] = height / 2
+        m_screen[3][3] = 1
+
+        for i, v in enumerate(self.vertices):
+            self.vertices[i] = np.matmul(m_screen, v)
+
+    def __get_best_near_and_far(self):
+        smallest = sys.maxsize
+        biggest = 0
+        for v in self.vertices:
+            if abs(v[2]) > biggest:
+                biggest = abs(v[2])
+            if abs(v[2]) < smallest:
+                smallest = abs(v[2])
+        return smallest, biggest
