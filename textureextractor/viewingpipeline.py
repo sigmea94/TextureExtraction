@@ -112,53 +112,10 @@ class Pipeline:
 
     def apply_perspective_transformation(self):
         """
-        projection into cuboid [0,-1]
-        see CG book Chapter 13
-        """
-        near, far = self.__get_best_near_and_far()
+        transforms view frustum into cuboid.
+        the x and y values are limited between -1 and 1
 
-        # scale f to -1
-        m_scale = np.zeros((4, 4))
-        m_scale[0][0] = 1/(far * math.tan(math.radians(self.fov_h/2)))
-        m_scale[1][1] = 1/(far * math.tan(math.radians(self.fov_v/2)))
-        m_scale[2][2] = 1 / far
-        m_scale[3][3] = 1
-
-        # transform frustum to cuboid
-        m_cub = np.zeros((4, 4))
-        m_cub[0][0] = far - near
-        m_cub[1][1] = far - near
-        m_cub[2][2] = far
-        m_cub[2][3] = near
-        m_cub[3][2] = near - far
-
-        m = np.matmul(m_cub, m_scale)
-
-        for i, v in enumerate(self.vertices):
-            self.vertices[i] = np.matmul(m, v)
-
-    def apply_perspective_transformation2(self):
-        """
-        projection into cube [-1,1]
-        see CG lecture
-        """
-        near, far = self.__get_best_near_and_far()
-
-        width = 2 * near * math.tan(math.radians(self.fov_h/2))
-        height = 2 * near * math.tan(math.radians(self.fov_v/2))
-        m_pers = np.zeros((4, 4))
-        m_pers[0][0] = (2*near)/width
-        m_pers[1][1] = (2 * near) / height
-        m_pers[2][2] = -(far + near) / (near - far)
-        m_pers[2][3] = (-2*far*near) / (near - far)
-        m_pers[3][2] = -1
-
-        for i, v in enumerate(self.vertices):
-            self.vertices[i] = np.matmul(m_pers, v)
-
-    def apply_perspective_transformation3(self):
-        """
-        keeps z value but projects x and y between -1 and 1
+        Note: this transformation keeps the z value for easier occlusion culling
         """
         tan_h = math.tan(math.radians(self.fov_h/2))
         tan_v = math.tan(math.radians(self.fov_v/2))
@@ -175,9 +132,14 @@ class Pipeline:
             self.vertices[i] = np.array([x, y, z, v[3]])
 
     def apply_screen_transformation(self, width, height):
-        """tbd"""
+        """
+        transforms the scene into the 2D screen plane
+
+        :param width: width of the screen/image in pixel
+        :param height: height of the screen/image in pixel
+        """
         m_screen = np.zeros((4, 4))
-        m_screen[0][0] = width/2
+        m_screen[0][0] = width / 2
         m_screen[1][1] = height / 2
         m_screen[0][3] = width / 2
         m_screen[1][3] = height / 2
@@ -185,13 +147,3 @@ class Pipeline:
 
         for i, v in enumerate(self.vertices):
             self.vertices[i] = np.matmul(m_screen, v)
-
-    def __get_best_near_and_far(self):
-        smallest = sys.maxsize
-        biggest = 0
-        for v in self.vertices:
-            if abs(v[2]) > biggest:
-                biggest = abs(v[2])
-            if abs(v[2]) < smallest:
-                smallest = abs(v[2])
-        return smallest, biggest

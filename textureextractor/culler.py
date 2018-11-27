@@ -27,32 +27,7 @@ def cull_backfaces(scene, cop):
         scene.faces.remove(f)
 
 
-def cull_frustum(scene, fov_h, fov_v):
-    """cull on frustum after view_transformation but before perspective projection"""
-    faces_to_discard = []
-    for face in scene.faces:
-        is_outside = False
-        tan_h = math.tan(math.radians(fov_h/2))
-        tan_v = math.tan(math.radians(fov_v/2))
-        for v in face.vertices:
-            x = v.pos[0]
-            y = v.pos[1]
-            z = v.pos[2]
-            # calculate max_x (max_y) in distance z
-            max_x = tan_h * abs(z)
-            max_y = tan_v * abs(z)
-            if x < -max_x or x > max_x or y < -max_y or y > max_y or z >= 0:
-                # if there is only one vertex outside: discard whole face
-                is_outside = True
-                break
-        if is_outside:
-            __remove_face_from_vertices(scene, face)
-            faces_to_discard.append(face)
-    for f in faces_to_discard:
-        scene.faces.remove(f)
-
-
-def cull_frustum_after_perspective(scene):
+def cull_frustum(scene):
     """
     cull on frustum after perspective projection
     x and y are  between -1 and 1

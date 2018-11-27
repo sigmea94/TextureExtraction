@@ -28,10 +28,11 @@ class Extractor:
         steps:
          1. cull backfaces
          2. apply view transformation to scene
-         3. cull faces outside the view frustum
-         4. perspective transformation
+         3. perspective transformation
+         4. cull faces outside the view frustum
          5. TODO occlusion culling
          6. screen transformation
+         7. TODO texture generation
         """
 
         # backface culling with camera as cop
@@ -40,20 +41,18 @@ class Extractor:
         # use list comprehension to extract only vertex coordinates
         pipeline = Pipeline(self.camera, [v.pos for v in self.scene.vertices], self.scene.normals)
         pipeline.apply_view_transformation()
-        pipeline.apply_to_scene(self.scene)
-
-        # frustum culling
-        # frustum culling is done before perspective transformation to determine best near and far plane
-        # normally it would be easier to do it after projection
-        culler.cull_frustum(self.scene, self.camera["fov_horizontal"], self.camera["fov_vertical"])
 
         # perspective transfomation
-        pipeline.set_vertices([v.pos for v in self.scene.vertices])
         pipeline.apply_perspective_transformation()
+
+        # frustum culling
+        pipeline.apply_to_scene(self.scene)
+        culler.cull_frustum(self.scene)
 
         # TODO: occlusion culling
 
         # screen transformation
+        pipeline.set_vertices([v.pos for v in self.scene.vertices])
         pipeline.apply_screen_transformation(self.image.width, self.image.height)
         pipeline.apply_to_scene(self.scene)
 
