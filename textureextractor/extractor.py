@@ -30,7 +30,7 @@ class Extractor:
          2. apply view transformation to scene
          3. perspective transformation
          4. cull faces outside the view frustum
-         5. TODO occlusion culling
+         5. occlusion culling
          6. screen transformation
          7. TODO texture generation
         """
@@ -49,7 +49,8 @@ class Extractor:
         pipeline.apply_to_scene(self.scene)
         culler.cull_frustum(self.scene)
 
-        # TODO: occlusion culling
+        # occlusion culling
+        culler.cull_occluded(self.scene)
 
         # screen transformation
         pipeline.set_vertices([v.pos for v in self.scene.vertices])
