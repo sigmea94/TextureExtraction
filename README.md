@@ -29,7 +29,7 @@ A "scene" object is build as follows:
     * list of adjacent faces (parameter faces)
 * list of faces with
     * list of vertices of the face (parameter vertices)
-    * list of texture indices for each vertex (parameter vt_idx)
+    * list of texture indices for each vertex (parameter vt_indices)
     * normal index (parameter vn_idx)
     
 Faces are stored as triangles. Every input mesh which is build of faces with more than three vertices is "triangulated"

@@ -40,7 +40,7 @@ class Scene:
             face_line = "f "
             for i in range(3):
                 v_idx = self.vertices.index(face.vertices[i])
-                face_line += str(v_idx + 1) + "/" + str(face.vt_idx[i] + 1) + "/" + str(face.vn_idx + 1) + " "
+                face_line += str(v_idx + 1) + "/" + str(face.vt_indices[i] + 1) + "/" + str(face.vn_idx + 1) + " "
             f.write(face_line + "\n")
 
         f.close()

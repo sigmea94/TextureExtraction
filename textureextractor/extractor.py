@@ -32,7 +32,7 @@ class Extractor:
          4. cull faces outside the view frustum
          5. occlusion culling
          6. screen transformation
-         7. TODO texture generation
+         7. copy pixels
         """
 
         # backface culling with camera as cop
@@ -57,7 +57,66 @@ class Extractor:
         pipeline.apply_screen_transformation(self.image.width, self.image.height)
         pipeline.apply_to_scene(self.scene)
 
-        # TODO: texture generation
+        # copy pixels from image to texture image
+        self.__copy_pixel()
+
+        # save texture in file
+        self.__save_image(self.base_texture, "texture.png")
+
+    def __copy_pixel(self):
+        # possible library functions: Image.paste
+
+        for f in self.scene.faces:
+            texture_pos = []
+            image_pos = []
+            for i in range(len(f.vertices)):
+                vt = self.scene.texture_coords[f.vt_indices[i]]
+                v = f.vertices[i].pos
+                x = math.floor(self.base_texture.width * vt[0])
+                y = math.floor(self.base_texture.height * vt[1])
+                texture_pos.append([x, y])
+                image_pos.append(v)
+
+            vt1 = texture_pos[0]
+            vt2 = texture_pos[1]
+            vt3 = texture_pos[2]
+            v1 = image_pos[0]
+            v2 = image_pos[1]
+            v3 = image_pos[2]
+
+            middle_x = 0.5 * vt2[0] + 0.5 * vt3[0]
+            middle_y = 0.5 * vt2[1] + 0.5 * vt3[1]
+
+            alpha_distance = round(math.sqrt((vt1[0] - middle_x) ** 2 + (vt1[1] - middle_y) ** 2))
+
+            beta_distance = round(math.sqrt(((vt2[0] - vt3[0]) ** 2) + ((vt2[1] - vt3[1]) ** 2)))
+
+            alpha_step = round(1 / alpha_distance, 5)
+            beta_step = round(1 / beta_distance, 5)
+
+            alpha = 0
+            while alpha <= 1:
+                beta = 0
+                while beta <= 1 - alpha:
+                    gamma = round(1 - alpha - beta, 5)
+
+                    x_texture = math.floor(alpha * vt1[0] + beta * vt2[0] + gamma * vt3[0])
+                    y_texture = math.floor(alpha * vt1[1] + beta * vt2[1] + gamma * vt3[1])
+
+                    # TODO check for x_texture == width
+                    if x_texture >= self.base_texture.width:
+                        x_texture -= self.base_texture.width
+                    if y_texture >= self.base_texture.height:
+                        y_texture -= self.base_texture.height
+
+                    x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
+                    y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
+
+                    # copy pixel [y_image, x_image] to [y_texture, x_texture]
+                    pixel = self.image.getpixel((x_image, y_image))
+                    self.base_texture.putpixel((x_texture, y_texture), pixel)
+                    beta = round(beta + beta_step, 5)
+                alpha = round(alpha + alpha_step, 5)
 
     @staticmethod
     def __read_obj(obj_path):
@@ -115,8 +174,9 @@ class Extractor:
 
     @staticmethod
     def __save_image(image, image_path):
-        if not isinstance(image, Image):
-            raise ValueError("only pillow image objects can be saved")
+        # TODO check necesary?
+        # if not isinstance(image, Image):
+        #    raise ValueError("only pillow image objects can be saved")
         image.save(image_path)
 
     @staticmethod

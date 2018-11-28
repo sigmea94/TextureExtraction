@@ -1,5 +1,5 @@
 {
   "fov_horizontal": 49.1343,
-  "position": [0, 0, 2],
-  "look_direction": [0,-1,-1]
+  "position": [0, 0, 5],
+  "look_direction": [0, 0, -1]
 }
