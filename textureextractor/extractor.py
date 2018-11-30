@@ -2,10 +2,12 @@ import json
 import math
 
 from PIL import Image
+import numpy as np
 
 from objparser.parser import Parser
 from textureextractor.viewingpipeline import Pipeline
 from textureextractor import culler
+from textureextractor import utils
 
 
 class Extractor:
@@ -61,22 +63,25 @@ class Extractor:
         self.__copy_pixel()
 
         # save texture in file
-        self.__save_image(self.base_texture, "texture.png")
+        self.base_texture.save("texture.png")
 
     def __copy_pixel(self):
-        # possible library functions: Image.paste
-
         for f in self.scene.faces:
             texture_pos = []
             image_pos = []
+
+            # calculate vertices on texture map and corresponding vertices on image
             for i in range(len(f.vertices)):
+                # texture coordinates are specified as a percentage of the total image size
                 vt = self.scene.texture_coords[f.vt_indices[i]]
-                v = f.vertices[i].pos
                 x = math.floor(self.base_texture.width * vt[0])
                 y = math.floor(self.base_texture.height * vt[1])
                 texture_pos.append([x, y])
-                image_pos.append(v)
 
+                # get the corresponding image vertex
+                image_pos.append(f.vertices[i].pos)
+
+            # a face is build of three vertices (resulting in three texture vertices (vt) and three image vertices (v))
             vt1 = texture_pos[0]
             vt2 = texture_pos[1]
             vt3 = texture_pos[2]
@@ -84,37 +89,37 @@ class Extractor:
             v2 = image_pos[1]
             v3 = image_pos[2]
 
-            middle_x = 0.5 * vt2[0] + 0.5 * vt3[0]
-            middle_y = 0.5 * vt2[1] + 0.5 * vt3[1]
+            # calculate the best step size in alpha and beta direction
+            alpha_step, beta_step = utils.calculate_baryzentric_step_size(vt1, vt2, vt3)
 
-            alpha_distance = round(math.sqrt((vt1[0] - middle_x) ** 2 + (vt1[1] - middle_y) ** 2))
-
-            beta_distance = round(math.sqrt(((vt2[0] - vt3[0]) ** 2) + ((vt2[1] - vt3[1]) ** 2)))
-
-            alpha_step = round(1 / alpha_distance, 5)
-            beta_step = round(1 / beta_distance, 5)
-
+            # iterate all pixel within the triangle using baryzentric interpolation
+            # starting on the v2 v3 edge
             alpha = 0
             while alpha <= 1:
                 beta = 0
                 while beta <= 1 - alpha:
                     gamma = round(1 - alpha - beta, 5)
 
+                    # interpolate texture position
                     x_texture = math.floor(alpha * vt1[0] + beta * vt2[0] + gamma * vt3[0])
                     y_texture = math.floor(alpha * vt1[1] + beta * vt2[1] + gamma * vt3[1])
 
-                    # TODO check for x_texture == width
-                    if x_texture >= self.base_texture.width:
+                    # a texture map can be seen as a torus
+                    # This is because coordinates larger than the texture image begin left (x) or top (y) again.
+                    # Therefore, the corresponding texture coordinates within the texture image size are calculated.
+                    while x_texture >= self.base_texture.width:
                         x_texture -= self.base_texture.width
-                    if y_texture >= self.base_texture.height:
+                    while y_texture >= self.base_texture.height:
                         y_texture -= self.base_texture.height
 
+                    # interpolate image position
                     x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
                     y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
 
                     # copy pixel [y_image, x_image] to [y_texture, x_texture]
                     pixel = self.image.getpixel((x_image, y_image))
                     self.base_texture.putpixel((x_texture, y_texture), pixel)
+
                     beta = round(beta + beta_step, 5)
                 alpha = round(alpha + alpha_step, 5)
 
@@ -148,6 +153,11 @@ class Extractor:
             raise ValueError("camera parameter 'position' should exist")
         elif "look_direction" not in camera:
             raise ValueError("camera parameter 'look_direction' should exist")
+        elif "up_direction" not in camera:
+            raise ValueError("camera parameter 'up_direction' should exist")
+
+        if np.array_equal(np.cross(camera["look_direction"], camera["up_direction"]), [0, 0, 0]):
+            raise ValueError("look_direction and up_direction must not be parallel")
 
         return camera
 
@@ -171,13 +181,6 @@ class Extractor:
         else:
             base = Image.new('RGB', (1024, 1024))
         return base
-
-    @staticmethod
-    def __save_image(image, image_path):
-        # TODO check necesary?
-        # if not isinstance(image, Image):
-        #    raise ValueError("only pillow image objects can be saved")
-        image.save(image_path)
 
     @staticmethod
     def __calculate_vertical_fov(fov_h, aspect_ratio):

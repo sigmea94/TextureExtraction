@@ -24,9 +24,7 @@ class Pipeline:
         look = np.array(camera["look_direction"])
         self.w = -look / np.linalg.norm(look)
 
-        # up direction is considered given
-        # TODO camera from top causes error because of wrong up direction
-        up = np.array([0, 1, 0])
+        up = camera["up_direction"]
         cross = np.cross(up, self.w)
         self.u = cross / np.linalg.norm(cross)
         self.v = np.cross(self.w, self.u)

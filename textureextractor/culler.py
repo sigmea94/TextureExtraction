@@ -1,6 +1,7 @@
 import sys
 import math
 import numpy as np
+from textureextractor import utils
 
 
 def cull_backfaces(scene, cop):
@@ -113,27 +114,9 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
         v2 = buffer_vertices[3 * i + 2]
 
         # calculate the best step size in alpha and beta direction
-        # use median line for alpha
-        middle_x = 0.5 * v1[0] + 0.5 * v2[0]
-        middle_y = 0.5 * v1[1] + 0.5 * v2[1]
+        alpha_step, beta_step = utils.calculate_baryzentric_step_size(v0, v1, v2)
 
-        # alpha distance in pixel
-        alpha_distance = round(math.sqrt((v0[0] - middle_x) ** 2 + (v0[1] - middle_y) ** 2))
-
-        # or take biggest_distance?
-        # dist12 = math.sqrt((v0[0] - v1[0]) ** 2 + (v0[1] - v1[1]) ** 2)
-        # dist13 = math.sqrt((v0[0] - v2[0]) ** 2 + (v0[1] - v2[1]) ** 2)
-        # alpha_distance = dist12 if dist12 > dist13 else dist13
-
-        # beta distance in pixel
-        beta_distance = round(math.sqrt((v1[0] - v2[0]) ** 2 + (v1[1] - v2[1]) ** 2))
-
-        # for every pixel one step should be taken
-        # round to 5 decimal digits to prevent float incorrectness
-        alpha_step = round(1 / alpha_distance, 5)
-        beta_step = round(1 / beta_distance, 5)
-
-        # iterate over alle pixel inside the triangle using baryzentric interpolation
+        # iterate all pixel within the triangle using baryzentric interpolation
         # starting on the v1 v2 edge.
         alpha = 0
         while alpha <= 1:

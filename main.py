@@ -1,4 +1,5 @@
 import sys
+import time
 from textureextractor.extractor import Extractor
 
 
@@ -24,4 +25,6 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
