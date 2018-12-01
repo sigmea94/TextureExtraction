@@ -66,6 +66,7 @@ class Extractor:
         self.base_texture.save("texture.png")
 
     def __copy_pixel(self):
+        # TODO parallelize on gpu
         for f in self.scene.faces:
             texture_pos = []
             image_pos = []
@@ -76,6 +77,8 @@ class Extractor:
                 vt = self.scene.texture_coords[f.vt_indices[i]]
                 x = math.floor(self.base_texture.width * vt[0])
                 y = math.floor(self.base_texture.height * vt[1])
+                # texture coordinate is given from lower left corner but image coordinates start on upper left corner
+                y = self.base_texture.height - y
                 texture_pos.append([x, y])
 
                 # get the corresponding image vertex
@@ -115,6 +118,8 @@ class Extractor:
                     # interpolate image position
                     x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
                     y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
+                    # model y axis is up but image y axis is down
+                    y_image = self.image.height - y_image
 
                     # copy pixel [y_image, x_image] to [y_texture, x_texture]
                     pixel = self.image.getpixel((x_image, y_image))

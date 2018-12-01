@@ -27,6 +27,12 @@ def calculate_baryzentric_step_size(v1, v2, v3):
     # beta distance in pixel
     beta_distance = round(math.sqrt((v2[0] - v3[0]) ** 2 + (v2[1] - v3[1]) ** 2))
 
+    # for very small distances at least one step should be done
+    if alpha_distance is 0:
+        alpha_distance = 1
+    if beta_distance is 0:
+        beta_distance = 1
+
     # for every pixel one step should be taken
     # round to 5 decimal digits to prevent float incorrectness
     alpha_step = round(1 / alpha_distance, 5)
