@@ -7,7 +7,6 @@ import numpy as np
 from objparser.parser import Parser
 from textureextractor.viewingpipeline import Pipeline
 from textureextractor import culler
-from textureextractor import utils
 
 
 class Extractor:
@@ -66,7 +65,15 @@ class Extractor:
         self.base_texture.save("texture.png")
 
     def __copy_pixel(self):
-        # TODO parallelize on gpu
+        # convert images to arrays for better performance
+        im = np.array(self.image)
+        texture = np.array(self.base_texture)
+
+        # get size of images only once to increase performance
+        texture_width = texture.shape[1]
+        texture_height = texture.shape[0]
+        image_height = im.shape[0]
+
         for f in self.scene.faces:
             texture_pos = []
             image_pos = []
@@ -75,10 +82,10 @@ class Extractor:
             for i in range(len(f.vertices)):
                 # texture coordinates are specified as a percentage of the total image size
                 vt = self.scene.texture_coords[f.vt_indices[i]]
-                x = math.floor(self.base_texture.width * vt[0])
-                y = math.floor(self.base_texture.height * vt[1])
+                x = math.floor(texture_width * vt[0])
+                y = math.floor(texture_height * vt[1])
                 # texture coordinate is given from lower left corner but image coordinates start on upper left corner
-                y = self.base_texture.height - y
+                y = texture_height - y
                 texture_pos.append([x, y])
 
                 # get the corresponding image vertex
@@ -92,41 +99,56 @@ class Extractor:
             v2 = image_pos[1]
             v3 = image_pos[2]
 
-            # calculate the best step size in alpha and beta direction
-            alpha_step, beta_step = utils.calculate_baryzentric_step_size(vt1, vt2, vt3)
+            # calculate bounding box
+            max_x = max(vt1[0], max(vt2[0], vt3[0]))
+            min_x = min(vt1[0], min(vt2[0], vt3[0]))
+            max_y = max(vt1[1], max(vt2[1], vt3[1]))
+            min_y = min(vt1[1], min(vt2[1], vt3[1]))
 
-            # iterate all pixel within the triangle using baryzentric interpolation
-            # starting on the v2 v3 edge
-            alpha = 0
-            while alpha <= 1:
-                beta = 0
-                while beta <= 1 - alpha:
-                    gamma = round(1 - alpha - beta, 5)
+            # total are of the face
+            total_area = self.__triangle_area(vt1, vt2, vt3)
 
-                    # interpolate texture position
-                    x_texture = math.floor(alpha * vt1[0] + beta * vt2[0] + gamma * vt3[0])
-                    y_texture = math.floor(alpha * vt1[1] + beta * vt2[1] + gamma * vt3[1])
+            # iterate all pixels of the bounding box
+            for x in range(min_x, max_x+1):
+                for y in range(min_y, max_y+1):
+                    p = [x, y]
 
-                    # a texture map can be seen as a torus
-                    # This is because coordinates larger than the texture image begin left (x) or top (y) again.
-                    # Therefore, the corresponding texture coordinates within the texture image size are calculated.
-                    while x_texture >= self.base_texture.width:
-                        x_texture -= self.base_texture.width
-                    while y_texture >= self.base_texture.height:
-                        y_texture -= self.base_texture.height
+                    # calculate area of every sub-triangle
+                    w12 = self.__triangle_area(vt1, vt2, p)
+                    w23 = self.__triangle_area(vt2, vt3, p)
+                    w31 = self.__triangle_area(vt3, vt1, p)
 
-                    # interpolate image position
-                    x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
-                    y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
-                    # model y axis is up but image y axis is down
-                    y_image = self.image.height - y_image
+                    # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
+                    alpha = w23 / total_area
+                    beta = w31 / total_area
+                    gamma = w12 / total_area
 
-                    # copy pixel [y_image, x_image] to [y_texture, x_texture]
-                    pixel = self.image.getpixel((x_image, y_image))
-                    self.base_texture.putpixel((x_texture, y_texture), pixel)
+                    if alpha >= 0 and beta >= 0 and gamma >= 0:
+                        # point is inside triangle
 
-                    beta = round(beta + beta_step, 5)
-                alpha = round(alpha + alpha_step, 5)
+                        # a texture map can be seen as a torus
+                        # This is because coordinates larger than the texture image begin left (x) or top (y) again.
+                        # Therefore, the corresponding texture coordinates within the texture image size are calculated.
+                        while p[0] >= texture_width:
+                            p[0] -= texture_width
+                        while y >= texture_height:
+                            p[1] -= texture_height
+
+                        # interpolate image position
+                        x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
+                        y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
+                        # model y axis is up but image y axis is down
+                        y_image = image_height - y_image
+
+                        # copy pixel [y_image, x_image] to [y_texture, x_texture]
+                        pixel = im[y_image][x_image]
+                        texture[p[1]][p[0]] = pixel
+
+        self.base_texture = Image.fromarray(texture)
+
+    @staticmethod
+    def __triangle_area(a, b, c):
+        return 0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]))
 
     @staticmethod
     def __read_obj(obj_path):
@@ -169,7 +191,7 @@ class Extractor:
     @staticmethod
     def __read_image(image_path):
         # open image and return pixel accessible format
-        img = Image.open(image_path, mode='r')
+        img = Image.open(image_path, mode='r').convert('RGB')
         return img
 
     @staticmethod

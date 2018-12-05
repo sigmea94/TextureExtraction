@@ -1,7 +1,6 @@
 import sys
 import math
 import numpy as np
-from textureextractor import utils
 
 
 def cull_backfaces(scene, cop):
@@ -19,10 +18,14 @@ def cull_backfaces(scene, cop):
         p = np.array(face.vertices[0].pos)
         # pcop: vector from cop to point p on triangle
         pcop = p - np.array(cop)
+        pcop = pcop / np.linalg.norm(pcop)
 
         normal = np.array(scene.normals[face.vn_idx])
-        if np.dot(normal, pcop) >= 0:
+        normal = normal / np.linalg.norm(normal)
+
+        if np.dot(normal, pcop) >= -0.1:
             # if dot-product is >= 0 the face is back facing
+            # cull faces with more than about 85 degree (cos(85) ~ 0.1) too
             __remove_face_from_vertices(scene, face)
             faces_to_discard.append(face)
     for f in faces_to_discard:
@@ -109,47 +112,45 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
 
     for i in range(len(scene.faces)):
         # buffer_vertex_idx = 3 * face_idx + vertex_idx (see __calculate_screen_pos)
-        v0 = buffer_vertices[3 * i]
-        v1 = buffer_vertices[3 * i + 1]
-        v2 = buffer_vertices[3 * i + 2]
+        v0 = [math.floor(v) for v in buffer_vertices[3 * i]]
+        v1 = [math.floor(v) for v in buffer_vertices[3 * i + 1]]
+        v2 = [math.floor(v) for v in buffer_vertices[3 * i + 2]]
 
-        # calculate the best step size in alpha and beta direction
-        alpha_step, beta_step = utils.calculate_baryzentric_step_size(v0, v1, v2)
+        # calculate bounding box
+        max_x = max(v0[0], max(v1[0], v2[0]))
+        min_x = min(v0[0], min(v1[0], v2[0]))
+        max_y = max(v0[1], max(v1[1], v2[1]))
+        min_y = min(v0[1], min(v1[1], v2[1]))
 
-        # iterate all pixel within the triangle using baryzentric interpolation
-        # starting on the v1 v2 edge.
-        alpha = 0
-        while alpha <= 1:
-            beta = 0
-            while beta <= 1 - alpha:
-                # alpha + beta + gamma = 1
-                gamma = round(1 - alpha - beta, 5)
+        # total are of the face
+        total_area = __triangle_area(v0, v1, v2)
 
-                # interpolate
-                x = alpha * v0[0] + beta * v1[0] + gamma * v2[0]
-                y = alpha * v0[1] + beta * v1[1] + gamma * v2[1]
-                z = abs(alpha * v0[2] + beta * v1[2] + gamma * v2[2])
+        # iterate all pixels of the bounding box
+        for x in range(min_x, max_x + 1):
+            for y in range(min_y, max_y + 1):
+                p = [x, y]
 
-                # set buffer value
-                row = math.floor(y)
-                column = math.floor(x)
-                if buffer[row][column] > z:
-                    buffer[row][column] = z
+                # calculate area of every sub-triangle
+                w12 = __triangle_area(v0, v1, p)
+                w23 = __triangle_area(v1, v2, p)
+                w31 = __triangle_area(v2, v0, p)
 
-                # next beta value
-                beta = round(beta + beta_step, 5)
-            # next alpha value
-            alpha = round(alpha + alpha_step, 5)
+                # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
+                alpha = w23 / total_area
+                beta = w31 / total_area
+                gamma = w12 / total_area
 
-    # write buffer in file for debugging purposes
-    # f = open("buffer.txt", 'w')
-    # for row in buffer:
-    #     for value in row:
-    #         if value is sys.maxsize:
-    #             value = 0
-    #         f.write('{:.2f} '.format(value))
-    #     f.write("\n")
+                if alpha >= 0 and beta >= 0 and gamma >= 0:
+                    z = abs(alpha * v0[2] + beta * v1[2] + gamma * v2[2])
+
+                    # set buffer value
+                    if buffer[y][x] > z:
+                        buffer[y][x] = z
     return buffer
+
+
+def __triangle_area(a, b, c):
+    return 0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]))
 
 
 def __calculate_buffer_pos(scene, width, height):
