@@ -7,6 +7,7 @@ import numpy as np
 from objparser.parser import Parser
 from textureextractor.viewingpipeline import Pipeline
 from textureextractor import culler
+from textureextractor import utils
 
 
 class Extractor:
@@ -72,6 +73,7 @@ class Extractor:
         # get size of images only once to increase performance
         texture_width = texture.shape[1]
         texture_height = texture.shape[0]
+        image_width = im.shape[1]
         image_height = im.shape[0]
 
         for f in self.scene.faces:
@@ -101,52 +103,57 @@ class Extractor:
             v2 = image_pos[1]
             v3 = image_pos[2]
 
-            # calculate bounding box
-            max_x = max(vt1[0], max(vt2[0], vt3[0]))
-            min_x = min(vt1[0], min(vt2[0], vt3[0]))
+            # calculate the active edges and the inactive edge at the start
+            active_edges, inactive_edge = utils.calculate_edge_table(vt1, vt2, vt3)
+
+            # total area of the face
+            total_area = utils.triangle_area(vt1, vt2, vt3)
+
             max_y = max(vt1[1], max(vt2[1], vt3[1]))
             min_y = min(vt1[1], min(vt2[1], vt3[1]))
-
-            # total are of the face
-            total_area = self.__triangle_area(vt1, vt2, vt3)
-
-            # iterate all pixels of the bounding box
-            for x in range(min_x, max_x+1):
-                for y in range(min_y, max_y+1):
+            for y in range(math.floor(min_y), math.floor(max_y)):
+                for x in range(math.floor(active_edges[0][0]), math.floor(active_edges[1][0])):
                     # calculate area of every sub-triangle
-                    w12 = self.__triangle_area(vt1, vt2, [x, y])
-                    w23 = self.__triangle_area(vt2, vt3, [x, y])
-                    w31 = self.__triangle_area(vt3, vt1, [x, y])
+                    w12 = utils.triangle_area(vt1, vt2, [x, y])
+                    w23 = utils.triangle_area(vt2, vt3, [x, y])
+                    w31 = utils.triangle_area(vt3, vt1, [x, y])
 
                     # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
                     alpha = w23 / total_area
                     beta = w31 / total_area
                     gamma = w12 / total_area
 
-                    if alpha >= 0 and beta >= 0 and gamma >= 0:
-                        # point is inside triangle
+                    # a texture map can be seen as a torus
+                    # This is because coordinates larger than the texture image begin left (x) or top (y) again.
+                    # Therefore, the corresponding texture coordinates within the texture image size are calculated.
+                    while x >= texture_width:
+                        x -= texture_width
+                    while y >= texture_height:
+                        y -= texture_height
 
-                        # a texture map can be seen as a torus
-                        # This is because coordinates larger than the texture image begin left (x) or top (y) again.
-                        # Therefore, the corresponding texture coordinates within the texture image size are calculated.
-                        while x >= texture_width:
-                            x -= texture_width
-                        while y >= texture_height:
-                            y -= texture_height
+                    # interpolate image position
+                    x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
+                    y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
+                    if x_image == image_width:
+                        x_image -= 1
+                    if y_image == image_height:
+                        y_image -= 1
 
-                        # interpolate image position
-                        x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
-                        y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
+                    # copy pixel [y_image, x_image] to [y_texture, x_texture]
+                    pixel = im[y_image][x_image]
+                    texture[y][x] = pixel
 
-                        # copy pixel [y_image, x_image] to [y_texture, x_texture]
-                        pixel = im[y_image][x_image]
-                        texture[y][x] = pixel
+                # update edges
+                if y == active_edges[0][2]:
+                    active_edges[0] = inactive_edge
+                if y == active_edges[1][2]:
+                    active_edges[1] = inactive_edge
+
+                # new x of edges
+                active_edges[0][0] += active_edges[0][3]
+                active_edges[1][0] += active_edges[1][3]
 
         self.base_texture = Image.fromarray(texture)
-
-    @staticmethod
-    def __triangle_area(a, b, c):
-        return 0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]))
 
     @staticmethod
     def __read_obj(obj_path):

@@ -2,6 +2,8 @@ import sys
 import math
 import numpy as np
 
+from textureextractor import utils
+
 
 def cull_backfaces(scene, cop):
     """
@@ -116,24 +118,22 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
         v1 = [math.floor(v) for v in buffer_vertices[3 * i + 1]]
         v2 = [math.floor(v) for v in buffer_vertices[3 * i + 2]]
 
-        # calculate bounding box
-        max_x = max(v0[0], max(v1[0], v2[0]))
-        min_x = min(v0[0], min(v1[0], v2[0]))
+        # calculate the active edges and the inactive edge at the start
+        active_edges, inactive_edge = utils.calculate_edge_table(v0, v1, v2)
+
+        # total area of the face
+        total_area = utils.triangle_area(v0, v1, v2)
+
         max_y = max(v0[1], max(v1[1], v2[1]))
         min_y = min(v0[1], min(v1[1], v2[1]))
-
-        # total are of the face
-        total_area = __triangle_area(v0, v1, v2)
-
-        # iterate all pixels of the bounding box
-        for x in range(min_x, max_x + 1):
-            for y in range(min_y, max_y + 1):
+        for y in range(math.floor(min_y), math.floor(max_y)):
+            for x in range(math.floor(active_edges[0][0]), math.floor(active_edges[1][0])):
                 p = [x, y]
 
                 # calculate area of every sub-triangle
-                w12 = __triangle_area(v0, v1, p)
-                w23 = __triangle_area(v1, v2, p)
-                w31 = __triangle_area(v2, v0, p)
+                w12 = utils.triangle_area(v0, v1, p)
+                w23 = utils.triangle_area(v1, v2, p)
+                w31 = utils.triangle_area(v2, v0, p)
 
                 # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
                 alpha = w23 / total_area
@@ -146,11 +146,18 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
                     # set buffer value
                     if buffer[y][x] > z:
                         buffer[y][x] = z
+
+            # update edges
+            if y == active_edges[0][2]:
+                active_edges[0] = inactive_edge
+            if y == active_edges[1][2]:
+                active_edges[1] = inactive_edge
+
+            # new x of edges
+            active_edges[0][0] += active_edges[0][3]
+            active_edges[1][0] += active_edges[1][3]
+
     return buffer
-
-
-def __triangle_area(a, b, c):
-    return 0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) * (b[0] - c[0]))
 
 
 def __calculate_buffer_pos(scene, width, height):
