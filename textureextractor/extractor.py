@@ -89,7 +89,9 @@ class Extractor:
                 texture_pos.append([x, y])
 
                 # get the corresponding image vertex
-                image_pos.append(f.vertices[i].pos)
+                # model y axis is up but image y axis is down
+                pos = f.vertices[i].pos
+                image_pos.append([pos[0], image_height - pos[1]])
 
             # a face is build of three vertices (resulting in three texture vertices (vt) and three image vertices (v))
             vt1 = texture_pos[0]
@@ -111,12 +113,10 @@ class Extractor:
             # iterate all pixels of the bounding box
             for x in range(min_x, max_x+1):
                 for y in range(min_y, max_y+1):
-                    p = [x, y]
-
                     # calculate area of every sub-triangle
-                    w12 = self.__triangle_area(vt1, vt2, p)
-                    w23 = self.__triangle_area(vt2, vt3, p)
-                    w31 = self.__triangle_area(vt3, vt1, p)
+                    w12 = self.__triangle_area(vt1, vt2, [x, y])
+                    w23 = self.__triangle_area(vt2, vt3, [x, y])
+                    w31 = self.__triangle_area(vt3, vt1, [x, y])
 
                     # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
                     alpha = w23 / total_area
@@ -129,20 +129,18 @@ class Extractor:
                         # a texture map can be seen as a torus
                         # This is because coordinates larger than the texture image begin left (x) or top (y) again.
                         # Therefore, the corresponding texture coordinates within the texture image size are calculated.
-                        while p[0] >= texture_width:
-                            p[0] -= texture_width
+                        while x >= texture_width:
+                            x -= texture_width
                         while y >= texture_height:
-                            p[1] -= texture_height
+                            y -= texture_height
 
                         # interpolate image position
                         x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
                         y_image = math.floor(alpha * v1[1] + beta * v2[1] + gamma * v3[1])
-                        # model y axis is up but image y axis is down
-                        y_image = image_height - y_image
 
                         # copy pixel [y_image, x_image] to [y_texture, x_texture]
                         pixel = im[y_image][x_image]
-                        texture[p[1]][p[0]] = pixel
+                        texture[y][x] = pixel
 
         self.base_texture = Image.fromarray(texture)
 
