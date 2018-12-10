@@ -92,9 +92,11 @@ Therefore the z value will be set to zero.
 
 The pixel-copy algorithm is crucial to the performance of the application and the quality of the generated texture. There
 are several possible implementations:
+* Scanline: Use a scanline algorithm to iterate only the pixels within the triangle.
+    * Best performance and good quality
 * Bounding Box: Calculate a Bounding box of the triangle on the texture. Iterate all pixels within the bounding box. For
 each pixel within the triangle calculate the corresponding image pixel via barycentric coordinates.
-    * Best performance and good quality
+    * Good performance and good quality
 * Flat Triangle: Similar to Bounding Box algorithm, however, only the pixel of the triangles are iterated. To achieve
 this the triangle must first be divided into a bottom and top flat triangle.
     * Similar performance and quality, but more complex algorithm 
@@ -107,9 +109,11 @@ pixels of the triangle sides. Iterate all barycentric coordinates for the textur
 and paste the whole triangle at once.
     * Bad performance but best quality.
 
-Ranking in terms of performance: Bounding Box > Flat Triangle > Barycentric > Transform and Paste > Flood Fill
+Ranking in terms of performance:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scanline > Bounding Box > Flat Triangle > Barycentric > Transform and Paste > Flood Fill
 
-Ranking in terms of quality: Transform and Paste > Bounding Box = Flat Triangle = Flood Fill > Barycentric
+Ranking in terms of quality:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Transform and Paste > Scanline = Bounding Box = Flat Triangle = Flood Fill > Barycentric
 
 Notes:
 * For algorithms that don't use barycentric coordinates directly, they can be calculated using the ratio of total area to
@@ -117,6 +121,7 @@ sub-triangle area.
 * Performance specifications refer to the sequential execution of the algorithm. For the final application a parallel
 execution should be used.
 * Performance depends on texture resolution and model size too.
+* Quality ratings are subjective without using numerical measures
 * These algorithms can be used in a modified version for the depth buffer calculation too.
          
 #### Example Extraction
