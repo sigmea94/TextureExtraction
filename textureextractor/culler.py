@@ -5,7 +5,7 @@ import numpy as np
 
 def cull_backfaces(scene, cop):
     """
-    discards all faces of a scene which are back facing from center of projection (cop)
+    discards all faces of a scene which are back facing or barely visible from center of projection (cop)
     also deletes vertices without corresponding faces
     normals and texture coords won't be deleted
 
