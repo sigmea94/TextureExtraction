@@ -109,8 +109,8 @@ class Extractor:
             total_area = self.__triangle_area(vt1, vt2, vt3)
 
             # iterate all pixels of the bounding box
-            for x in range(min_x, max_x):
-                for y in range(min_y, max_y):
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
                     # calculate area of every sub-triangle
                     w12 = self.__triangle_area(vt1, vt2, [x, y])
                     w23 = self.__triangle_area(vt2, vt3, [x, y])

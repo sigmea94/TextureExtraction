@@ -126,8 +126,8 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
         total_area = __triangle_area(v0, v1, v2)
 
         # iterate all pixels of the bounding box
-        for x in range(min_x, max_x):
-            for y in range(min_y, max_y):
+        for x in range(min_x, max_x + 1):
+            for y in range(min_y, max_y + 1):
                 p = [x, y]
 
                 # calculate area of every sub-triangle
