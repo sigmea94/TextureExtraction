@@ -138,7 +138,7 @@ class Pipeline:
         """
         m_screen = np.zeros((4, 4))
         m_screen[0][0] = width / 2
-        m_screen[1][1] = height / 2
+        m_screen[1][1] = - height / 2
         m_screen[0][3] = width / 2
         m_screen[1][3] = height / 2
         m_screen[3][3] = 1

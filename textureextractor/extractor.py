@@ -72,7 +72,6 @@ class Extractor:
         # get size of images only once to increase performance
         texture_width = texture.shape[1]
         texture_height = texture.shape[0]
-        image_height = im.shape[0]
 
         for f in self.scene.faces:
             texture_pos = []
@@ -89,9 +88,8 @@ class Extractor:
                 texture_pos.append([x, y])
 
                 # get the corresponding image vertex
-                # model y axis is up but image y axis is down
                 pos = f.vertices[i].pos
-                image_pos.append([pos[0], image_height - pos[1]])
+                image_pos.append([pos[0], pos[1]])
 
             # a face is build of three vertices (resulting in three texture vertices (vt) and three image vertices (v))
             vt1 = texture_pos[0]
