@@ -112,9 +112,9 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
 
     for i in range(len(scene.faces)):
         # buffer_vertex_idx = 3 * face_idx + vertex_idx (see __calculate_screen_pos)
-        v0 = [math.floor(v) for v in buffer_vertices[3 * i]]
-        v1 = [math.floor(v) for v in buffer_vertices[3 * i + 1]]
-        v2 = [math.floor(v) for v in buffer_vertices[3 * i + 2]]
+        v0 = buffer_vertices[3 * i]
+        v1 = buffer_vertices[3 * i + 1]
+        v2 = buffer_vertices[3 * i + 2]
 
         # calculate bounding box
         max_x = max(v0[0], max(v1[0], v2[0]))
@@ -166,7 +166,7 @@ def __calculate_buffer_pos(scene, width, height):
     # projection matrix
     m_buffer = np.zeros((4, 4))
     m_buffer[0][0] = width / 2
-    m_buffer[1][1] = height / 2
+    m_buffer[1][1] = -height / 2
     m_buffer[0][3] = width / 2
     m_buffer[1][3] = height / 2
     m_buffer[2][2] = 1
@@ -176,8 +176,8 @@ def __calculate_buffer_pos(scene, width, height):
     for face in scene.faces:
         for v in face.vertices:
             screen_pos = np.matmul(m_buffer, np.append(np.array(v.pos), np.array([1])))
-            # remove w value
-            buffer_vertices.append(np.delete(screen_pos, 3).tolist())
+            # remove w value and floor x and y
+            buffer_vertices.append([math.floor(screen_pos[0]), math.floor(screen_pos[1]), screen_pos[2]])
 
     return buffer_vertices
 
