@@ -84,8 +84,8 @@ def cull_occluded(scene):
         for j in range(len(face.vertices)):
             # buffer_pos_idx = 3 * face_idx + vertex_idx (see __calculate_screen_pos)
             buffer_pos = buffer_vertices[i*3+j]
-            column = math.floor(buffer_pos[0])
-            row = math.floor(buffer_pos[1])
+            column = buffer_pos[0]
+            row = buffer_pos[1]
             if buffer[row][column] < abs(buffer_pos[2]) - threshold:
                 # if there is only one vertex occluded: discard whole face
                 is_occluded = True
@@ -126,8 +126,8 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
         total_area = __triangle_area(v0, v1, v2)
 
         # iterate all pixels of the bounding box
-        for x in range(min_x, max_x + 1):
-            for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x):
+            for y in range(min_y, max_y):
                 p = [x, y]
 
                 # calculate area of every sub-triangle
@@ -166,7 +166,7 @@ def __calculate_buffer_pos(scene, width, height):
     # projection matrix
     m_buffer = np.zeros((4, 4))
     m_buffer[0][0] = width / 2
-    m_buffer[1][1] = -height / 2
+    m_buffer[1][1] = height / 2
     m_buffer[0][3] = width / 2
     m_buffer[1][3] = height / 2
     m_buffer[2][2] = 1
