@@ -86,8 +86,8 @@ def cull_occluded(scene):
         for j in range(len(face.vertices)):
             # buffer_pos_idx = 3 * face_idx + vertex_idx (see __calculate_screen_pos)
             buffer_pos = buffer_vertices[i*3+j]
-            column = math.floor(buffer_pos[0])
-            row = math.floor(buffer_pos[1])
+            column = buffer_pos[0]
+            row = buffer_pos[1]
             if buffer[row][column] < abs(buffer_pos[2]) - threshold:
                 # if there is only one vertex occluded: discard whole face
                 is_occluded = True
@@ -114,9 +114,9 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
 
     for i in range(len(scene.faces)):
         # buffer_vertex_idx = 3 * face_idx + vertex_idx (see __calculate_screen_pos)
-        v0 = [math.floor(v) for v in buffer_vertices[3 * i]]
-        v1 = [math.floor(v) for v in buffer_vertices[3 * i + 1]]
-        v2 = [math.floor(v) for v in buffer_vertices[3 * i + 2]]
+        v0 = buffer_vertices[3 * i]
+        v1 = buffer_vertices[3 * i + 1]
+        v2 = buffer_vertices[3 * i + 2]
 
         # calculate the active edges and the inactive edge at the start
         active_edges, inactive_edge = utils.calculate_edge_table(v0, v1, v2)
@@ -183,8 +183,8 @@ def __calculate_buffer_pos(scene, width, height):
     for face in scene.faces:
         for v in face.vertices:
             screen_pos = np.matmul(m_buffer, np.append(np.array(v.pos), np.array([1])))
-            # remove w value
-            buffer_vertices.append(np.delete(screen_pos, 3).tolist())
+            # remove w value and floor x and y
+            buffer_vertices.append([math.floor(screen_pos[0]), math.floor(screen_pos[1]), screen_pos[2]])
 
     return buffer_vertices
 
