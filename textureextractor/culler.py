@@ -17,13 +17,13 @@ def cull_backfaces(scene, cop):
         # take first vertex as point on mesh
         p = np.array(face.vertices[0].pos)
         # pcop: vector from cop to point p on triangle
-        pcop = p - np.array(cop)
+        pcop = np.array(cop) - p
         pcop = pcop / np.linalg.norm(pcop)
 
         normal = np.array(scene.normals[face.vn_idx])
         normal = normal / np.linalg.norm(normal)
 
-        if np.dot(normal, pcop) >= -0.1:
+        if np.dot(normal, pcop) <= 0.1:
             # if dot-product is >= 0 the face is back facing
             # cull faces with more than about 85 degree (cos(85) ~ 0.1) too
             __remove_face_from_vertices(scene, face)
