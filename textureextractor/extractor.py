@@ -127,10 +127,12 @@ class Extractor:
                         # a texture map can be seen as a torus
                         # This is because coordinates larger than the texture image begin left (x) or top (y) again.
                         # Therefore, the corresponding texture coordinates within the texture image size are calculated.
-                        while x >= texture_width:
-                            x -= texture_width
-                        while y >= texture_height:
-                            y -= texture_height
+                        x_texture = x
+                        y_texture = y
+                        while x_texture >= texture_width:
+                            x_texture -= texture_width
+                        while y_texture >= texture_height:
+                            y_texture -= texture_height
 
                         # interpolate image position
                         x_image = math.floor(alpha * v1[0] + beta * v2[0] + gamma * v3[0])
@@ -138,7 +140,7 @@ class Extractor:
 
                         # copy pixel [y_image, x_image] to [y_texture, x_texture]
                         pixel = im[y_image][x_image]
-                        texture[y][x] = pixel
+                        texture[y_texture][x_texture] = pixel
 
         self.base_texture = Image.fromarray(texture)
 
