@@ -1,8 +1,12 @@
 import time
 import sys
-from PIL import Image
+from PIL import Image, ImageFilter
 import math
-from skimage import io, color
+from skimage import color
+import numpy as np
+
+blur = True
+fault_intensity = False
 
 
 def main():
@@ -10,38 +14,45 @@ def main():
         ground_truth_path = sys.argv[1]
         texture_path = sys.argv[2]
 
-        ground_truth = io.imread(ground_truth_path)
-        if ground_truth.shape[2] == 4:
-            ground_truth = color.rgba2rgb(ground_truth)
-        ground_truth = color.rgb2lab(ground_truth)
-
-        texture = io.imread(texture_path)
-        if texture.shape[2] != 4:
-            print("texture should be rgba Format")
+        ground_truth = Image.open(ground_truth_path).convert('RGBA')
+        rgba_texture = Image.open(texture_path)
+        if rgba_texture.mode is not 'RGBA':
+            print("texture should be in RGBA mode")
             return
-
-        texture_lab = color.rgb2lab(color.rgba2rgb(texture))
-
-        if texture.shape[0] != ground_truth.shape[0] or texture.shape[1] != ground_truth.shape[1]:
+        if rgba_texture.size != ground_truth.size:
             print("Images cant be compared")
             return
 
-        visual_quality_image = Image.new('RGBA', (texture.shape[1], texture.shape[0]))
+        if blur:
+            texture = Image.alpha_composite(ground_truth, rgba_texture)
+
+            # Blur images
+            texture = texture.filter(ImageFilter.GaussianBlur(2))
+            ground_truth = ground_truth.filter(ImageFilter.GaussianBlur(2))
+        else:
+            texture = rgba_texture
+
+        rgba_texture = np.array(rgba_texture)
+
+        # convert to Lab color
+        texture = color.rgb2lab(color.rgba2rgb(texture))
+        ground_truth = color.rgb2lab(color.rgba2rgb(ground_truth))
+
+        visual_quality_image = Image.new('RGBA', (rgba_texture.shape[1], rgba_texture.shape[0]))
         visual_quality_pixels = visual_quality_image.load()
 
         total_distance = 0
         total_ratio = 0
         pixels = 0
-
         max_distance = math.sqrt(100 ** 2 + 256 ** 2 + 256 ** 2)
 
-        for y in range(texture.shape[0]):
-            for x in range(texture.shape[1]):
-                alpha = texture[y][x][3]
+        for y in range(rgba_texture.shape[0]):
+            for x in range(rgba_texture.shape[1]):
+                alpha = rgba_texture[y][x][3]
                 if alpha == 0:
                     continue
                 ground_truth_pixel = ground_truth[y][x]
-                texture_pixel = texture_lab[y][x]
+                texture_pixel = texture[y][x]
 
                 r_distance = abs(texture_pixel[0] - ground_truth_pixel[0])
                 g_distance = abs(texture_pixel[1] - ground_truth_pixel[1])
@@ -55,6 +66,8 @@ def main():
                     value = 255
                 else:
                     value = 0
+                if fault_intensity:
+                    value = math.floor(difference_ratio**0.5 * 255)
                 visual_quality_pixels[x, y] = (value, 0, 0, 255)
 
                 total_ratio += difference_ratio
