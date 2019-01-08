@@ -7,6 +7,7 @@ import numpy as np
 
 blur = True
 fault_intensity = False
+blur_rate = 2
 
 
 def main():
@@ -27,8 +28,8 @@ def main():
             texture = Image.alpha_composite(ground_truth, rgba_texture)
 
             # Blur images
-            texture = texture.filter(ImageFilter.GaussianBlur(2))
-            ground_truth = ground_truth.filter(ImageFilter.GaussianBlur(2))
+            texture = texture.filter(ImageFilter.GaussianBlur(blur_rate))
+            ground_truth = ground_truth.filter(ImageFilter.GaussianBlur(blur_rate))
         else:
             texture = rgba_texture
 
