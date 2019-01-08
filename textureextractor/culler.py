@@ -124,6 +124,8 @@ def __calculate_buffer(scene, buffer_vertices, buffer_width, buffer_height):
 
         # total are of the face
         total_area = __triangle_area(v0, v1, v2)
+        if total_area == 0.0:
+            continue
 
         # iterate all pixels of the bounding box
         for x in range(min_x, max_x + 1):
