@@ -89,24 +89,24 @@ class Pipeline:
         m_an rotates all vertices and normals in order to orientate the scene by the new axis
         both transformations can be combined in a single matrix view_mat
         """
-        t_an = np.identity(4)
-        t_an[0][3] = -self.camera_pos[0]
-        t_an[1][3] = -self.camera_pos[1]
-        t_an[2][3] = -self.camera_pos[2]
+        m_translate = np.identity(4)
+        m_translate[0][3] = -self.camera_pos[0]
+        m_translate[1][3] = -self.camera_pos[1]
+        m_translate[2][3] = -self.camera_pos[2]
 
-        m_an = np.array([[self.u[0], self.u[1], self.u[2], 0],
+        m_rotate = np.array([[self.u[0], self.u[1], self.u[2], 0],
                              [self.v[0], self.v[1], self.v[2], 0],
                              [self.w[0], self.w[1], self.w[2], 0],
                              [0, 0, 0, 1]])
 
-        view_mat = np.matmul(m_an, t_an)
+        view_mat = np.matmul(m_rotate, m_translate)
 
         for i, v in enumerate(self.vertices):
             self.vertices[i] = np.matmul(view_mat, v)
 
         # only the rotation needs to be applied to the normals
         for i, n in enumerate(self.normals):
-            self.normals[i] = np.matmul(m_an, n)
+            self.normals[i] = np.matmul(m_rotate, n)
 
     def apply_perspective_transformation(self):
         """
@@ -120,6 +120,7 @@ class Pipeline:
         for i, v in enumerate(self.vertices):
             z = v[2]
             if z == 0:
+                # values at the optical center are transformed to 0
                 x = 0
                 y = 0
             else:
