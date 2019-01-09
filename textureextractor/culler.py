@@ -2,6 +2,8 @@ import sys
 import math
 import numpy as np
 
+import config
+
 
 def cull_backfaces(scene, cop):
     """
@@ -66,12 +68,12 @@ def cull_occluded(scene):
     """
     # this values effect the performance: higher resolution slows down the application but increases the correctness of
     # the z buffer. Scenes with close occluding faces need a higher resolution.
-    buffer_width = 256
-    buffer_height = 256
+    buffer_width = config.depth_buffer_width
+    buffer_height = config.depth_buffer_height
     # threshold to prevent self occlusion resulting from discrete steps in depth buffer.
     # with a higher threshold the resolution can be reduced. The best threshold depends on the model (distances between
     # occluded faces)
-    threshold = 0.1
+    threshold = config.occlusion_culling_threshold
 
     # calculate the position of each vertex on the buffer
     buffer_vertices = __calculate_buffer_pos(scene, buffer_width, buffer_height)

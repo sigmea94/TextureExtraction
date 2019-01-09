@@ -7,6 +7,7 @@ import numpy as np
 from objparser.parser import Parser
 from textureextractor.viewingpipeline import Pipeline
 from textureextractor import culler
+import config
 
 
 class Extractor:
@@ -190,8 +191,12 @@ class Extractor:
 
     @staticmethod
     def __read_image(image_path):
+        if config.quality_mode:
+            mode = 'RGBA'
+        else:
+            mode = 'RGB'
         # open image and return pixel accessible format
-        img = Image.open(image_path, mode='r').convert('RGB')
+        img = Image.open(image_path, mode='r').convert(mode)
         return img
 
     @staticmethod
@@ -202,11 +207,15 @@ class Extractor:
         :param base_file: path to uv-texture file which should be refined (optional)
         :return: texture image
         """
+        if config.quality_mode:
+            mode = 'RGBA'
+        else:
+            mode = 'RGB'
         # create a new one if there is no existing
         if base_file is not None:
             base = Image.open(base_file, mode='r')
         else:
-            base = Image.new('RGB', (512, 512))
+            base = Image.new(mode, (config.texture_width, config.texture_height))
         return base
 
     @staticmethod

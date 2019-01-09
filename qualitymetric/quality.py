@@ -4,10 +4,7 @@ from PIL import Image, ImageFilter
 import math
 from skimage import color
 import numpy as np
-
-blur = True
-fault_intensity = False
-blur_rate = 2
+import config
 
 
 def main():
@@ -24,12 +21,12 @@ def main():
             print("Images cant be compared")
             return
 
-        if blur:
+        if config.quality_blur:
             texture = Image.alpha_composite(ground_truth, rgba_texture)
 
             # Blur images
-            texture = texture.filter(ImageFilter.GaussianBlur(blur_rate))
-            ground_truth = ground_truth.filter(ImageFilter.GaussianBlur(blur_rate))
+            texture = texture.filter(ImageFilter.GaussianBlur(config.quality_blur_rate))
+            ground_truth = ground_truth.filter(ImageFilter.GaussianBlur(config.quality_blur_rate))
         else:
             texture = rgba_texture
 
@@ -67,7 +64,7 @@ def main():
                     value = 255
                 else:
                     value = 0
-                if fault_intensity:
+                if config.quality_show_fault_intensity:
                     value = math.floor(difference_ratio**0.5 * 255)
                 visual_quality_pixels[x, y] = (value, 0, 0, 255)
 
