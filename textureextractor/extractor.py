@@ -107,6 +107,8 @@ class Extractor:
 
             # total are of the face
             total_area = self.__triangle_area(vt1, vt2, vt3)
+            if total_area == 0.0:
+                continue
 
             # iterate all pixels of the bounding box
             for x in range(min_x, max_x + 1):
