@@ -119,12 +119,48 @@ class Extractor:
                     w23 = self.__triangle_area(vt2, vt3, [x+0.5, y+0.5])
                     w31 = self.__triangle_area(vt3, vt1, [x+0.5, y+0.5])
 
+                    w12_tl = self.__triangle_area(vt1, vt2, [x, y])
+                    w23_tl = self.__triangle_area(vt2, vt3, [x, y])
+                    w31_tl = self.__triangle_area(vt3, vt1, [x, y])
+
+                    w12_tr = self.__triangle_area(vt1, vt2, [x + 1, y])
+                    w23_tr = self.__triangle_area(vt2, vt3, [x + 1, y])
+                    w31_tr = self.__triangle_area(vt3, vt1, [x + 1, y])
+
+                    w12_bl = self.__triangle_area(vt1, vt2, [x, y + 1])
+                    w23_bl = self.__triangle_area(vt2, vt3, [x, y + 1])
+                    w31_bl = self.__triangle_area(vt3, vt1, [x, y + 1])
+
+                    w12_br = self.__triangle_area(vt1, vt2, [x + 1, y + 1])
+                    w23_br = self.__triangle_area(vt2, vt3, [x + 1, y + 1])
+                    w31_br = self.__triangle_area(vt3, vt1, [x + 1, y + 1])
+
                     # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
                     alpha = w23 / total_area
                     beta = w31 / total_area
                     gamma = w12 / total_area
 
-                    if alpha >= 0 and beta >= 0 and gamma >= 0:
+                    alpha_tl = w23_tl / total_area
+                    beta_tl = w31_tl / total_area
+                    gamma_tl = w12_tl / total_area
+
+                    alpha_tr = w23_tr / total_area
+                    beta_tr = w31_tr / total_area
+                    gamma_tr = w12_tr / total_area
+
+                    alpha_bl = w23_bl / total_area
+                    beta_bl = w31_bl / total_area
+                    gamma_bl = w12_bl / total_area
+
+                    alpha_br = w23_br / total_area
+                    beta_br = w31_br / total_area
+                    gamma_br = w12_br / total_area
+
+                    if (alpha_tl >= 0 and beta_tl >= 0 and gamma_tl >= 0) \
+                        or (alpha_tr >= 0 and beta_tr >= 0 and gamma_tr >= 0) \
+                        or (alpha_bl >= 0 and beta_bl >= 0 and gamma_bl >= 0) \
+                        or (alpha_br >= 0 and beta_br >= 0 and gamma_br >= 0):
+                        # TODO better inside test: no need to calculate alpha, beta and gamma for every edge
                         # point is inside triangle
 
                         # a texture map can be seen as a torus
