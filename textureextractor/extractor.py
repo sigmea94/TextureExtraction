@@ -81,10 +81,10 @@ class Extractor:
             for i in range(len(f.vertices)):
                 # texture coordinates are specified as a percentage of the total image size
                 vt = self.scene.texture_coords[f.vt_indices[i]]
-                x = math.floor(texture_width * vt[0])
-                y = math.floor(texture_height * vt[1])
+                x = texture_width * vt[0]
                 # texture coordinate is given from lower left corner but image coordinates start on upper left corner
-                y = texture_height - y
+                y = texture_height * (1-vt[1])
+
                 texture_pos.append([x, y])
 
                 # get the corresponding image vertex
@@ -100,10 +100,10 @@ class Extractor:
             v3 = image_pos[2]
 
             # calculate bounding box
-            max_x = max(vt1[0], max(vt2[0], vt3[0]))
-            min_x = min(vt1[0], min(vt2[0], vt3[0]))
-            max_y = max(vt1[1], max(vt2[1], vt3[1]))
-            min_y = min(vt1[1], min(vt2[1], vt3[1]))
+            max_x = math.ceil(max(vt1[0], max(vt2[0], vt3[0])))
+            min_x = math.floor(min(vt1[0], min(vt2[0], vt3[0])))
+            max_y = math.ceil(max(vt1[1], max(vt2[1], vt3[1])))
+            min_y = math.floor(min(vt1[1], min(vt2[1], vt3[1])))
 
             # total are of the face
             total_area = self.__triangle_area(vt1, vt2, vt3)
@@ -111,12 +111,12 @@ class Extractor:
                 continue
 
             # iterate all pixels of the bounding box
-            for x in range(min_x, max_x + 1):
-                for y in range(min_y, max_y + 1):
-                    # calculate area of every sub-triangle
-                    w12 = self.__triangle_area(vt1, vt2, [x, y])
-                    w23 = self.__triangle_area(vt2, vt3, [x, y])
-                    w31 = self.__triangle_area(vt3, vt1, [x, y])
+            for x in range(min_x, max_x):
+                for y in range(min_y, max_y):
+                    # calculate area of every sub-triangle, take center of pixel
+                    w12 = self.__triangle_area(vt1, vt2, [x+0.5, y+0.5])
+                    w23 = self.__triangle_area(vt2, vt3, [x+0.5, y+0.5])
+                    w31 = self.__triangle_area(vt3, vt1, [x+0.5, y+0.5])
 
                     # calculate baryzentric coordinates from sub-triangle / total-triangle ratio
                     alpha = w23 / total_area
@@ -206,7 +206,7 @@ class Extractor:
         if base_file is not None:
             base = Image.open(base_file, mode='r')
         else:
-            base = Image.new('RGB', (1024, 1024))
+            base = Image.new('RGB', (512, 512))
         return base
 
     @staticmethod
