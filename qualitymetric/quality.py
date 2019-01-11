@@ -41,7 +41,8 @@ def main():
 
         total_distance = 0
         total_ratio = 0
-        pixels = 0
+        total_pixels = 0
+        bad_pixels = 0
         max_distance = math.sqrt(100 ** 2 + 256 ** 2 + 256 ** 2)
 
         for y in range(rgba_texture.shape[0]):
@@ -59,9 +60,10 @@ def main():
                 distance = math.sqrt(r_distance ** 2 + g_distance ** 2 + b_distance ** 2)
                 difference_ratio = distance/max_distance
 
-                if distance > 18.78:
-                    # min 5% difference color red
+                if distance > 9.5:
+                    # min 2.5% difference color red
                     value = 255
+                    bad_pixels += 1
                 else:
                     value = 0
                 if config.quality_show_fault_intensity:
@@ -70,11 +72,14 @@ def main():
 
                 total_ratio += difference_ratio
                 total_distance += distance
-                pixels += 1
+                total_pixels += 1
 
         print("Total Distance: " + str(total_distance))
-        print("Average Distance: " + str(total_distance/pixels))
-        print("Average Ratio: " + str(100 * total_ratio/pixels) + "%")
+        print("Total Pixels: " + str(total_pixels))
+        print("Average Distance: " + str(total_distance/total_pixels))
+        print("Average Ratio: " + str(100 * total_ratio/total_pixels) + "%")
+        print("Bad Pixels Ratio: " + str(100 * bad_pixels/total_pixels) + "%")
+
         visual_quality_image.save("visual_quality.png")
 
     else:
