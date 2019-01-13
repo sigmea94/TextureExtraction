@@ -43,24 +43,20 @@ def main():
         total_ratio = 0
         total_pixels = 0
         bad_pixels = 0
-        max_distance = math.sqrt(100 ** 2 + 256 ** 2 + 256 ** 2)
+        max_distance = math.sqrt(100 ** 2 + 255 ** 2 + 255 ** 2)
+
+        distance_array = color.deltaE_cie76(texture, ground_truth)
 
         for y in range(rgba_texture.shape[0]):
             for x in range(rgba_texture.shape[1]):
                 alpha = rgba_texture[y][x][3]
                 if alpha == 0:
                     continue
-                ground_truth_pixel = ground_truth[y][x]
-                texture_pixel = texture[y][x]
 
-                r_distance = abs(texture_pixel[0] - ground_truth_pixel[0])
-                g_distance = abs(texture_pixel[1] - ground_truth_pixel[1])
-                b_distance = abs(texture_pixel[2] - ground_truth_pixel[2])
-
-                distance = math.sqrt(r_distance ** 2 + g_distance ** 2 + b_distance ** 2)
+                distance = distance_array[y][x]
                 difference_ratio = distance/max_distance
 
-                if distance > 9.5:
+                if distance > 0.05 * max_distance:
                     # min 2.5% difference color red
                     value = 255
                     bad_pixels += 1
